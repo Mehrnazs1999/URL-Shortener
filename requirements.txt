@@ -1,0 +1,9 @@
+
+fastapi==0.143.5
+uvicorn[standard]
+sqlalchemy
+alembic
+psycopg[binary]
+pydantic-settings
+pytest
+httpx
