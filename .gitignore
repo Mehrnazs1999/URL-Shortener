@@ -3,6 +3,7 @@
 .env
 .env.*
 !.env.example
+url_shortener.db
 
 # Python virtual environment
 .venv/

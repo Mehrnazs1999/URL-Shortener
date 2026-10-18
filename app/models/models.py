@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, func
+from sqlalchemy import DateTime, Integer, String, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -37,5 +37,6 @@ class URL(Base):
     click_count: Mapped[int] = mapped_column(
         Integer,
         default=0,
+        server_default=text("0"),
         nullable=False,
     )

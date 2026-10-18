@@ -2,7 +2,6 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.database import Base, engine
 from app.api.routes import router
 from app.services.exceptions import URLNotFoundError
 
@@ -12,8 +11,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("url_visits")
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="URL Shortener",
