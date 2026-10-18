@@ -1,4 +1,4 @@
-from app.services.shortener_services import id_generator
+from app.services.shortener_services.id_generator import id_generator
 from app.services.shortener_services.Base62_encoder import encode_base62
 
 
