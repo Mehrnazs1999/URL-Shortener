@@ -123,7 +123,7 @@ def test_generate_id_counter_overflow_waits_for_next_timestamp(generator):
     mock_sleep.assert_called_once_with(0.001)
 
 
-def test_generate_id_is_thread_safe(generator):
+def test_generate_id_updates_the_counter_across_threads(generator):
     number_of_threads = 20
 
     with patch.object(

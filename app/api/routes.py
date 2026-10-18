@@ -1,7 +1,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Path, Request, status, APIRouter, Depends
+from fastapi import APIRouter, Depends, Path, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy.orm import Session
@@ -26,8 +26,8 @@ ShortCode = Annotated[
     str,
     Path(
         min_length=1,
-        max_length=32,
-        pattern=r"^[a-zA-Z0-9_-]+$",
+        max_length=8,
+        pattern=r"^[a-zA-Z0-9]+$",
     ),
 ]
 
@@ -36,13 +36,16 @@ ShortCode = Annotated[
     "/shorten",
     status_code=status.HTTP_201_CREATED,
 )
-def shorten_url(request: URLCreate, db: DbSession):
-    short_code = create_short_url(request, db)
+def shorten_url(payload: URLCreate, request: Request, db: DbSession):
+    original_url = str(payload.original_url)
+    short_code = create_short_url(original_url, db)
 
     return {
         "short_code": short_code,
-        "short_url": f"http://localhost:8000/{short_code}",
-        "original_url": str(request.original_url),
+        "short_url": str(
+            request.url_for("redirect_to_original", short_code=short_code)
+        ),
+        "original_url": original_url,
     }
 
 

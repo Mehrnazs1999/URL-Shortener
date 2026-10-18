@@ -2,12 +2,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, update
 
 from app.services.exceptions import URLNotFoundError
-from app.api.routes import DbSession
 from app.models.models import URL
 from app.services.shortener_services.shortener_service import generate_short_code
 
 
-def create_short_url(original_url: str, db: DbSession):
+def create_short_url(original_url: str, db: Session) -> str:
     statement = select(URL).where(URL.original_url == original_url)
     existing_url = db.scalar(statement)
 
@@ -15,32 +14,32 @@ def create_short_url(original_url: str, db: DbSession):
         return existing_url.short_code
 
     short_code = generate_short_code()
-    with db.begin():
-        url = URL(
-            original_url=original_url,
-            short_code=short_code,
-        )
-        db.add(url)
-        db.flush()
+    url = URL(
+        original_url=original_url,
+        short_code=short_code,
+    )
+    db.add(url)
+    db.commit()
 
     return short_code
 
 
-def get_original_url(short_code: str, db: DbSession):
-    with db.begin():
-        db.execute(
-            update(URL)
-            .where(URL.short_code == short_code)
-            .values(click_count=URL.click_count + 1)
-        )
-
+def get_original_url(short_code: str, db: Session) -> str:
     url = find_url(db, short_code)
-    raise url.original_url
+
+    db.execute(
+        update(URL)
+        .where(URL.short_code == short_code)
+        .values(click_count=URL.click_count + 1)
+    )
+    db.commit()
+
+    return url.original_url
 
 
-def get_url_stats(short_code: str, db: DbSession):
+def get_url_stats(short_code: str, db: Session) -> int:
     url = find_url(db, short_code)
-    raise url.click_count
+    return url.click_count
 
 
 def find_url(db: Session, short_code: str) -> URL:

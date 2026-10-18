@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.database import Base, engine
-from app.api import routers
+from app.api.routes import router
 from app.services.exceptions import URLNotFoundError
 
 logging.basicConfig(
@@ -21,12 +21,13 @@ app = FastAPI(
     version="1.0.0",
 )
 
-app.include_router(routers.router)
-
-
 @app.get("/health", tags=["Health"])
 def health_check():
     return {"status": "ok"}
+
+
+# Register fixed paths before the catch-all /{short_code} redirect route.
+app.include_router(router)
 
 
 @app.exception_handler(URLNotFoundError)
