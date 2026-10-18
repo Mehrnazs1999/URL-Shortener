@@ -17,11 +17,12 @@ class URL(Base):
 
     original_url: Mapped[str] = mapped_column(
         String(2048),
+        unique=True,
         nullable=False,
     )
 
     short_code: Mapped[str] = mapped_column(
-        String(32),
+        String(8),
         unique=True,
         index=True,
         nullable=False,

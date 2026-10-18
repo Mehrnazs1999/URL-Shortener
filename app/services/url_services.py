@@ -4,12 +4,17 @@ from sqlalchemy import select, update
 from app.services.exceptions import URLNotFoundError
 from app.api.routes import DbSession
 from app.models.models import URL
-from app.services.hash_service import hash
+from app.services.shortener_services.shortener_service import generate_short_code
 
 
 def create_short_url(original_url: str, db: DbSession):
-    short_code = hash(original_url)
+    statement = select(URL).where(URL.original_url == original_url)
+    existing_url = db.scalar(statement)
 
+    if existing_url is not None:
+        return existing_url.short_code
+
+    short_code = generate_short_code()
     with db.begin():
         url = URL(
             original_url=original_url,
