@@ -13,6 +13,8 @@ if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not configured")
 
 engine_options = {"pool_pre_ping": True}
+
+# For in-memory sqlite in test / developement
 if DATABASE_URL.startswith("sqlite"):
     engine_options.update(
         connect_args={"check_same_thread": False},

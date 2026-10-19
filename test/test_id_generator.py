@@ -5,11 +5,14 @@ from unittest.mock import patch
 import pytest
 
 from app.services.shortener_services.id_generator import (
-    EPOCH,
     MAX_COUNTER,
     MAX_TIMESTAMP,
     TIMESTAMP_SHIFT,
     IDGenerator,
+)
+from app.services.exceptions import (
+    ShortCodeGenerationError,
+    TooManyRequestError,
 )
 
 
@@ -70,7 +73,7 @@ def test_generate_id_rejects_time_before_epoch(generator):
         return_value=-1,
     ):
         with pytest.raises(
-            RuntimeError,
+            ShortCodeGenerationError,
             match="before the custom epoch",
         ):
             generator.generate_id()
@@ -83,7 +86,7 @@ def test_generate_id_rejects_timestamp_overflow(generator):
         return_value=MAX_TIMESTAMP + 1,
     ):
         with pytest.raises(
-            RuntimeError,
+            ShortCodeGenerationError,
             match="Timestamp capacity exceeded",
         ):
             generator.generate_id()
@@ -98,29 +101,22 @@ def test_generate_id_rejects_clock_going_backwards(generator):
         generator.generate_id()
 
         with pytest.raises(
-            RuntimeError,
+            ShortCodeGenerationError,
             match="System clock moved backwards",
         ):
             generator.generate_id()
 
 
-def test_generate_id_counter_overflow_waits_for_next_timestamp(generator):
+def test_generate_id_counter_overflow_raises_rate_limit_error(generator):
     generator.last_timestamp = 100
     generator.counter = MAX_COUNTER
 
-    with patch.object(
-        generator,
-        "_current_timestamp",
-        side_effect=[100, 101],
-    ), patch(
-        "app.services.shortener_services.id_generator.time.sleep"
-    ) as mock_sleep:
-        result = generator.generate_id()
-
-    assert result == (101 << TIMESTAMP_SHIFT) | 0
-    assert generator.last_timestamp == 101
-    assert generator.counter == 0
-    mock_sleep.assert_called_once_with(0.001)
+    with patch.object(generator, "_current_timestamp", return_value=100):
+        with pytest.raises(
+            TooManyRequestError,
+            match="Capacity per second exceeded",
+        ):
+            generator.generate_id()
 
 
 def test_generate_id_updates_the_counter_across_threads(generator):

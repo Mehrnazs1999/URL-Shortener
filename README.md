@@ -9,11 +9,8 @@ and logs successful redirect requests with the client IP and timestamp.
 - `GET /{short_code}` responds with a temporary redirect and increments the
   visit count.
 - `GET /stats/{short_code}` returns the visit count.
-- URLs are persisted with an original URL, unique short code, creation time,
-  and click count.
+- URLs are persisted with an original URL, unique short code, creation date and time, and click count.
 - Redirect logging is centralized in middleware.
-
-Scalability work is intentionally not included yet.
 
 ## Run locally
 

@@ -2,8 +2,12 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.api.routes import router
-from app.services.exceptions import URLNotFoundError
+from app.api import router
+from app.services.exceptions import (
+    ShortCodeGenerationError,
+    TooManyRequestError,
+    URLNotFoundError,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,12 +22,12 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 @app.get("/health", tags=["Health"])
 def health_check():
     return {"status": "ok"}
 
 
-# Register fixed paths before the catch-all /{short_code} redirect route.
 app.include_router(router)
 
 
@@ -35,6 +39,42 @@ async def url_not_found_handler(
     return JSONResponse(
         status_code=404,
         content={"detail": "Short URL not found"},
+    )
+
+
+@app.exception_handler(ShortCodeGenerationError)
+async def handle_short_code_generation_error(
+    request: Request,
+    exc: ShortCodeGenerationError,
+):
+    logger.exception(
+        "Short code generation failed: %s",
+        exc,
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Unable to create a shortened URL"
+        },
+    )
+
+
+@app.exception_handler(TooManyRequestError)
+async def handle_too_many_requests_error(
+    request: Request,
+    exc: TooManyRequestError,
+):
+    logger.exception(
+        "The number of requests per second exceeded the capacity: %s",
+        exc,
+    )
+
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Short-code capacity per second exceeded"
+        },
     )
 
 

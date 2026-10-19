@@ -6,6 +6,10 @@ from fastapi.testclient import TestClient
 from app.database import Base, SessionLocal, engine
 from app.main import app
 from app.models.models import URL
+from app.services.exceptions import (
+    ShortCodeGenerationError,
+    TooManyRequestError,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -74,3 +78,35 @@ def test_shorten_rejects_an_invalid_url(client):
     response = client.post("/shorten", json={"original_url": "not-a-url"})
 
     assert response.status_code == 422
+
+
+def test_shorten_returns_server_error_when_id_generation_fails(client, monkeypatch):
+    monkeypatch.setattr(
+        "app.services.shortener_services.shortener_service.id_generator.generate_id",
+        lambda: (_ for _ in ()).throw(ShortCodeGenerationError("clock error")),
+    )
+
+    response = client.post(
+        "/shorten", json={"original_url": "https://example.com"}
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Unable to create a shortened URL"}
+
+
+def test_shorten_returns_rate_limit_when_id_capacity_is_exhausted(client, monkeypatch):
+    monkeypatch.setattr(
+        "app.services.shortener_services.shortener_service.id_generator.generate_id",
+        lambda: (_ for _ in ()).throw(
+            TooManyRequestError("Capacity per second exceeded")
+        ),
+    )
+
+    response = client.post(
+        "/shorten", json={"original_url": "https://example.com"}
+    )
+
+    assert response.status_code == 429
+    assert response.json() == {
+        "detail": "Short-code capacity per second exceeded"
+    }

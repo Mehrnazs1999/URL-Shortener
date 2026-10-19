@@ -1,10 +1,12 @@
+from app.services.exceptions import ShortCodeGenerationError
+
 
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
 def encode_base62(number: int) -> str:
     if number < 0:
-        raise ValueError("number must be non-negative")
+        raise ShortCodeGenerationError("number must be non-negative")
 
     if number == 0:
         return ALPHABET[0]

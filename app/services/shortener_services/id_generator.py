@@ -1,6 +1,11 @@
 import threading
 import time
 
+from app.services.exceptions import (
+    ShortCodeGenerationError,
+    TooManyRequestError,
+)
+
 
 # Custom epoch: 2026-01-01 00:00:00 UTC
 EPOCH = 1767225600
@@ -30,28 +35,20 @@ class IDGenerator:
             timestamp = self._current_timestamp()
 
             if timestamp < 0:
-                raise RuntimeError(
-                    "Current time is before the custom epoch"
-                )
+                raise ShortCodeGenerationError(
+                    "Current time is before the custom epoch")
 
             if timestamp > MAX_TIMESTAMP:
-                raise RuntimeError("Timestamp capacity exceeded")
+                raise ShortCodeGenerationError("Timestamp capacity exceeded")
 
             if timestamp < self.last_timestamp:
-                raise RuntimeError("System clock moved backwards")
+                raise ShortCodeGenerationError("System clock moved backwards")
 
             if timestamp == self.last_timestamp:
                 self.counter += 1
-
                 if self.counter > MAX_COUNTER:
-                    while timestamp <= self.last_timestamp:
-                        time.sleep(0.001)
-                        timestamp = self._current_timestamp()
+                    raise TooManyRequestError("Capacity per second exceeded")
 
-                    if timestamp > MAX_TIMESTAMP:
-                        raise RuntimeError("Timestamp capacity exceeded")
-
-                    self.counter = 0
             else:
                 self.counter = 0
 
